@@ -118,7 +118,7 @@ framexleftmargin=15pt}
 \maketitle
 
 \begin{abstract}
-    
+    Modern digital hardware is becoming ever more complex. And agile development, an efficient idea in software development, has been introduced into hardware. Furthermore, as a new hardware construction language, Chisel helps to raise the level of hardware design abstraction with the support of object-oriented and functional programming. Chisel plays a crucial role in future hardware design and open-source hardware development. However, the formal verification for Chisel is still limited. In this paper, we propose ChiselFV, a formal verification framework that has supported detailed formal hardware property descriptions and integrated mature formal hardware verification flows based on SymbiYosys. It builds on top of Chisel and uses Scala to drive the verification process. Thus the framework can be seen as an extension of Chisel. ChiselFV makes it easy to verify hardware designs formally when implementing them in Chisel.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -126,7 +126,51 @@ RISC-V, Formal Verification, Hardware verification, Chisel
 \end{IEEEkeywords}
 
 \section{Introduction}
-abc \cite{abc}
+The dominant traditional hardware-description languages (HDLs), Verilog and VHDL, were originally developed as hardware simulation languages, and were only later adopted as a basis for hardware synthesis. 
+These languages also lack the powerful abstraction facilities that are common in modern software languages, which leads to low designer productivity by making it difficult to reuse components.
+% 因此 Chisel 被推出。
+Therefore, Chisel was proposed.
+It is intended to be a simple platform that provides modern programming language features for accurately specifying low-level hardware blocks, but which can be readily extended to capture many useful high-level hardware design patterns \cite{bachrach2012chisel}.
+
+% Chisel
+Chisel (Constructing Hardware in a Scala-Embedded Language) is an open-source hardware construction language developed by UC Berkeley. It is developed as a domain-specific extension to the Scala programming language. And because Chisel is embedded in Scala, hardware developers can tap into Scala’s modern programming language features—such as object-oriented programming, functional programming, parameterized types, abstract data types, operator overloading, and type inference—to improve designer productivity by raising the abstraction level and increasing code reuse \cite{lee2016agile}.
+
+% RISC-V
+% Chisel 是为了敏捷开发 RISC-V 处理器而开发的，其生态因为其语言特性和 RISC-V 的流行而逐渐壮大。
+Chisel was developed for agile development of RISC-V processors, and its ecosystem has grown due to its language features and the popularity of RISC-V.
+RISC-V is an ISA developed at UC Berkeley and designed from the ground up to be clean, microarchitecture-agnostic and highly extensible. Most importantly, RISC-V is free and open, which allows it to be used in both commercial and open-source settings \cite{asanovic2014instruction}.
+% UC Berkeley 也推出了两款具有代表性的基于 Chisel 的 RISC-V 芯片生成器。
+UC Berkeley has also released two representative RISC-V chip generators based on Chisel: Rocket Chip \cite{asanovic2016rocket} and BOOM \cite{celio2017boomv2}.
+% 这其中后者是一个乱序核。
+The latter is an out-of-order core.
+% Chisel 由于其高级语言的特性，提供了更强的抽象能力，从而提供了便利的库开发能力。
+Chisel, due to its high-level language features, provides more powerful abstraction capabilities, thus providing convenient library development capabilities. 
+% 前文中提到的 Rocket chip 实际上是一个 Chip 生成器，它由一系列的参数化的构建芯片库构成。
+The Rocket Chip mentioned above is actually a chip generator, which consists of a collection of parameterized chip-building libraries that we can use to generate different SoC variants \cite{asanovic2016rocket}.
+% 基于它的 Raven 系列芯片已经可以进行流片了。
+The Raven family of chips based on it have already been taped out \cite{lee2015raven}.
+
+% 验证的重要性，但是目前的处理器验证主要是在 SystemVerilog 层次。
+% 在硬件开发流程中，由于其错误的代价十分高昂，设计的正确性验证是至关重要的。
+In the hardware development process, due to the high cost of errors, the correctness verification of the design is crucial.
+% 然而当前的处理器验证工作主要是在 SystemVerilog 层次。
+However, current processor verification efforts are mainly at the SystemVerilog level.
+% 对于 RISC-V 指令集处理器验证的代表性工作为 RISC-V Formal。
+The representative work for RISC-V instruction set processor verification is RISC-V Formal \cite{riscvFvChisel}.
+% RISC-V Formal 实现了什么，但是，不足：1. 层次 2. 框架结构
+% RISC-V Formal 包含了一个处理器独立的 RISC-V ISA 形式化描述一组验证 testbench。
+RISC-V Formal consists of a processor-independent formal description of the RISC-V ISA and a set of formal testbenches for each processor supported by the framework.
+% 实现了 RISC-V Formal 中定义的 RVFI(RISC-V Formal Interface) 接口的 RISC-V core 都可以使用它进行形式化验证。
+Any RISC-V core that implements the RVFI (RISC-V Formal Interface) defined in RISC-V Formal can use it for formal verification.
+% 然而，RISC-V Formal 验证框架是在 SystemVerilog 层次的。
+However, the RISC-V Formal verification framework is at the SystemVerilog level.
+% 因为 Chisel 生成的 SystemVerilog 代码的可读性和可修改性较差，因此无法直接使用 RISC-V Formal 对 Chisel 实现的 Core 进行形式化验证。
+Because the readability and modifiability of the SystemVerilog code generated by Chisel is poor, it is not possible to directly use RISC-V Formal to verify the core implemented by Chisel.
+% 另一方面，RISC-V Formal 的验证后端与框架是紧密耦合的，目前只支持调用 BMC 算法。
+On the other hand, the verification backend of RISC-V Formal is tightly coupled with the framework, and currently only supports calling the BMC algorithm.
+
+% 我们的贡献
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{./ref.bib}

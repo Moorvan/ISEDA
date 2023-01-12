@@ -1,2 +1,3 @@
 *.pdf
 *.gz
+.DS_Store
