@@ -211,7 +211,7 @@ The framework verifies RISC-V processors implemented at the Verilog/SystemVerilo
 % 它使用了 SVA(SystemVerilog Assertions) 在 SystemVerilog 上来定义形式化性质描述。
 It uses SVA (SystemVerilog Assertions) \cite{vijayaraghavan2005practical} to define formal property descriptions on SystemVerilog.
 % 验证后端则是将 SystemVerilog 和 SVA 代码直接交给 SymbiYosys 工具进行 BMC 检查。
-The verification backend is a direct handoff of the SystemVerilog and SVA code to the SymbiYosys tool for BMC checking.
+The verification backend is a direct handoff of the SystemVerilog and SVA code to the SymbiYosys \cite{SymbiYosys} tool for BMC checking.
 
 \begin{figure}[!htbp]
     \begin{center}
@@ -225,7 +225,7 @@ Figure 1 shows the framework design of the RISC-V Formal.
 % 首先，在对处理器正确性对验证过程中，内存和外部的 IO 会被抽象掉，连接核心的实现。
 First of all, in the process of verifying the correctness of the processor, the memory and external IO will be abstracted and connected to the RISC-V core.
 % 两者都作为 rvfi_wrapper 模块的组成。
-Both are used as components of the rvfi\_wrapper module.
+Both are used as components of the \verb|rvfi_wrapper| module.
 % 在核心中，需要实现 RVFI 接口，输出在指令执行过程中的一系列状态信息。
 In the core, the RVFI interface needs to be implemented to output a series of state information during the instruction execution process.
 
@@ -245,9 +245,9 @@ output [NRET * XLEN   - 1 : 0] rvfi_mem_wdata
 As shown in Listing \ref{rvfi}, the RVFI interface requires the core to output the contents of the instruction encoding, the source operand addresses and contents, the PC values before and after the instruction execution, and the addresses and contents of the memory access, etc.
 
 % 之后，RVFI 接口作为 rvfi_check 模块的输入。
-Then, the RVFI interface is used as the input of the rvfi\_check module.
+Then, the RVFI interface is used as the input of the \verb|rvfi_check| module.
 % 在 RISC-V Formal 中，实际上包含了有几百个不同的 rvfi_check 模块。
-There are actually a few hundred different rvfi\_check modules in RISC-V Formal.
+There are actually a few hundred different \verb|rvfi_check| modules in RISC-V Formal.
 % 这些多个小的 checker 模块分别对核心中不同方面的正确性进行验证。
 These small checker modules verify the correctness of different aspects of the core separately.
 % 例如有对 RISC-V 指令集中各个具体指令的执行正确性进行验证的 checkers，有对指令执行前后 PC 寄存器更新是否正确进行检查的 checker，有对通用寄存器值变化进行检查的，等等。
@@ -255,8 +255,40 @@ For example, there are checkers that verify the correctness of the execution of 
 % 全部的检查内容可以查看项目文档或者相关代码。
 All the check contents can be found in the project documentation or the related code \cite{riscv-formal}.
 
+% 在一个具体的 checker 模块中，会包含一个实例化的对应的 spec 模块。在这个 spec 模块中，会依据 RISC-V 官方给出的规范内容来实现对应这一小块的规范内容。
+Within a specific checker module, a corresponding spec module is instantiated. In this spec module, the corresponding small piece of specification is implemented according to the official RISC-V specification \cite{waterman2014risc}.
+% 例如对于 |add| 指令验证的 checker 模块中，会实例化一个对应的 |insn_spec| 模块。在该模块中，会依据官方规范来定义对于加法指令，会对寄存器等状态变量产生怎样的影响。
+For example, in the checker module of the \verb|add| instruction verification, a corresponding \verb|insn_spec| module is instantiated.
+In this module, the impact on the registers and other state variables will be defined according to the official specification.
+% |insn_spec| 模块会输出指令执行后各个状态变量的变化情况，然后在 checker 模块中，会使用 SVA 语法来描述 spec 输出结果和实际核心的执行情况是一致的断言。
+The \verb|insn_spec| module outputs the changes in the state variables after the instruction execution, and then in the checker module, the SVA is used to describe the assertions that the spec output is consistent with the actual core execution.
+
+% 最后，RISC-V Formal 会将这些包含 SVA 的 SystemVerilog 模块交给 SymbiYosys 工具来进行 BMC 检查。
+Finally, RISC-V Formal hands over these SystemVerilog modules containing SVA to the SymbiYosys tool for BMC ( Bounded Model Checking) \cite{biere2009bounded}.
+% 这里使用自动生成的 sby 文件来驱动 SymbiYosys。
+Here, the automatically generated sby file is used to drive SymbiYosys.
+% SymbiYosys 会给出性质验证的结果。由于只使用了 BMC 检查，因此只能给出在电路的若干步内，性质是否成立的结论。
+SymbiYosys will give the results of the property verification. Since only BMC checking is used, only a conclusion can be given as to whether the property holds within a number of steps of the circuit.
+
+% 基于 RISC-V Formal 的验证方法在业界得到了广泛的应用。
+The RISC-V Formal-based verification approach is widely used in the industry. 
+% Standard Semiconductor 的 Lion is a formally verified, 5-stage pipeline RISC-V core.
+Standard Semiconductor's Lion is a formally verified, 5-stage pipeline RISC-V core.
+% 它实现了 RVFI 接口并使用 RISC-V Formal 来进行形式化验证。
+It implements the RVFI interface and uses RISC-V Formal for formal verification \cite{lion}.
+% lowRISC 的 Ibex is a production-quality open source 32-bit RISC-V CPU core written in SystemVerilog. 它同样使用该框架进行形式化验证。
+LowRISC's Ibex is a production-quality open source 32-bit RISC-V CPU core written in SystemVerilog. And it also uses this framework for formal verification \cite{ibex}.
+WARP-V is a CPU generator written using Transaction-Level Verilog (TL-Verilog) that implements RISC-V ISA and has been formally verified using riscv-formal \cite{hoover2018formally}.
+
+% 在 RISC-V Formal 中，由于底层使用 SVA 来定义性质，因此整个框架只适用于 SystemVerilog 实现的 RISC-V 处理器。
+In RISC-V Formal, the entire framework is only applicable to SystemVerilog implementations of RISC-V processors because the underlying SVA is used to define the properties.
+% 尽管，使用 Chisel 来设计和验证 RISC-V 处理器是更有生产力的，是大势所趋。
+Although, using Chisel for designing and verifying RISC-V processors is more productive and is the general trend.
+% 另一方面，RISC-V Formal 专注于进行 BMC，并且由于耦合强很难扩展到其他验证算法，或者是更换后端引擎。
+On the other hand, RISC-V Formal is focused on BMC and is hard to extend to other verification algorithms or to replace the backend engine due to strong coupling.
 
 \section{RISC-V Formal in Chisel}
+
 
 \section{Case Study}
 
