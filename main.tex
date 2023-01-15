@@ -174,7 +174,7 @@ On the other hand, the verification backend of RISC-V Formal is tightly coupled 
 
 % 我们的贡献
 % 基于上述，我们提出 RVFC 框架，受启发于 RISC-V Fomal 框架，并在 Chisel 层次进行实践。
-Base on the above, we propose the RVFC framework, inspired by the RISC-V Formal framework, and try to practice it at the Chisel level. 
+Base on the above, we propose the RVFC (RISC-V Formal in Chisel) framework, inspired by the RISC-V Formal framework, and try to practice it at the Chisel level. 
 % ChiselFV
 % RVFC 框架基于我们之前的工作 ChiselFV。
 The RVFC framework is based on our previous work ChiselFV \cite{ChiselFV}.
@@ -289,6 +289,66 @@ On the other hand, RISC-V Formal is focused on BMC and is hard to extend to othe
 
 \section{RISC-V Formal in Chisel}
 
+% RVFC 是在 Chisel 层次对 RISC-V 处理器进行形式化验证的框架，其验证思路受启发于 RISC-V Formal 框架。
+RVFC is a formal verification framework for RISC-V processors at the Chisel level, and its verification idea is inspired by the RISC-V Formal framework.
+% 与 RISC-V Formal 不同，在 RVFC 中，对于形式化性质的定义和验证依赖于 ChiselFV。
+Unlike RISC-V Formal, in RVFC, the definition and verification of formal properties depend on ChiselFV.
+% ChiselFV 采用与 Chisel 相同的高级语言 Scala 语言实现，借助现代软件编程语言的高级特性，ChiselFV 具有很强的模块化和可扩展性。
+ChiselFV is implemented in the Scala language, which is the same as Chisel. With the help of the advanced features of modern software programming languages, ChiselFV has strong modularity and extensibility.
+% ChiselFV 目前支持直接调用 BMC, K-Induction, PDR 三种主流模型检测算法，同时其后端引擎易于插拔更换。
+ChiselFV currently supports direct invocation of three mainstream model detection algorithms, BMC, K-Induction, and PDR. At the same time, its backend engine is easy to plug and replace.
+
+% 本章节将通过两部分来详细说明 RVFC 框架，分别是 RVFC 的框架结构和验证流程。
+This section details the RVFC framework in two parts, the framework structure and the verification workflow.
+
+\subsection{Framework Structure}
+% RVFC 的框架结构与 RISC-V Formal 类似，都需要 chip 实现 RVFI 接口，并将指令执行过程中的相关信息进行输出，最终与按照规范会达到的结果进行一致性断言。
+The RVFC framework structure is similar to RISC-V Formal in that it requires the chip to implement the RVFI interface and output information about the instruction execution process, and finally assert consistency with the results that would be achieved according to the specification.
+
+\begin{figure}[!htbp]
+    \begin{center}
+    \includegraphics[width=1\linewidth]{pics/rvfc.pdf}
+    \caption{RVFC Framework Structure}
+    \label{fig: rvfc structure}
+    \end{center}
+\end{figure}
+
+% 如图 2 所示，RVFC 验证框架中主要有三个主体，分别为: 使用 Chisel 实现的 RISC-V 处理器 Chip 模块即验证的对象，制定具体验证内容的 Spec 模块们和驱动验证过程的 Checker 模块。
+As shown in Figure \ref{fig: rvfc structure}, there are three main bodies in the RVFC framework, namely: the RISC-V processor Chip module implemented by Chisel, which is the verification object, the Spec modules, which specify the verification content, and the Checker modules that drive the verification process.
+
+\begin{lstlisting}[language=scala, caption={RVFI Definition in RVFC}, label=rvfic]
+class RVFI_IO extends Bundle {
+    val valid     = Output(Bool())
+    val insn      = Output(UInt(32.W))
+    val pc_rdata  = Output(UInt(64.W))
+    val pc_wdata  = Output(UInt(64.W))
+    val rs1_addr  = Output(UInt(5.W))
+    val rs2_addr  = Output(UInt(5.W))
+    val rs1_rdata = Output(UInt(64.W))
+    val rs2_rdata = Output(UInt(64.W))
+    val rd_addr   = Output(UInt(5.W))
+    val rd_wdata  = Output(UInt(64.W))
+    val mem_addr  = Output(UInt(32.W))
+    val mem_rdata = Output(UInt(64.W))
+    val mem_wdata = Output(UInt(64.W))
+    val regs      = Vec(32, Output(UInt(64.W)))
+}
+\end{lstlisting}
+
+% 与 RISC-V Formal 相同的，RVFC 中的 Chip 模块需要实现 RVFI 接口，将指令执行过程中的相关信息输出。
+As in RISC-V Formal, the Chip module in RVFC needs to implement the RVFI interface and output information about the instruction execution process.
+% 借助 Scala 语言更强的抽象能力，RVFI 接口被定义成一个 Bundle 的子类，从而更容易维护和扩展。
+With the Scala language's greater abstraction capabilities, the \verb|RVFI_IO| is defined as a subclass of \verb|Bundle|, making it easier to maintain and extend.
+% 比 RISC-V Formal 更多的是，RVFC 中将所有通用寄存器的状态作为 RVFI 的一部分进行输出，从而更好的检查指令执行的正确性。
+In addition to RISC-V Formal, RVFC outputs the state of all general-purpose registers as part of RVFI, which is better for checking the correctness of instruction execution.
+
+% |RVFI_IO| 作为 Chip 模块的输出，同时作为 Spec 模块们和 Checker 模块的输入。
+The \verb|RVFI_IO| is the output of the Chip module and is also the input of the Spec modules and the Checker module.
+% 
+
+
+
+\subsection{Verification Workflow}
 
 \section{Case Study}
 
