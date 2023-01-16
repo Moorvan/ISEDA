@@ -395,6 +395,45 @@ Users can add or subtract content that needs to be validated this time, or write
 Finally, users can configure the verification algorithm of ChiselFV to be called, and the BMC, K-induction, and PDR algorithms are currently provided.
 
 \subsection{Verification Workflow}
+% 使用 RVFC 对 Chisel 编写的 RISC-V 设计进行验证主要有以下几个步骤：首先需要在 Chip 这设计 RVFI 连接，接着配置需要验证的内容，最后配置需要调用的验证算法。
+The verification of the RISC-V design in Chisel using RVFC consists of several steps: first, RVFI needs to be connected in Chip; then, the content to be verified needs to be configured; and finally, the verification algorithm to be called needs to be configured.
+% RVFC 会调用 ChiselFV 的后端引擎进行验证，并给出验证结果，一般会有四种情况：性质成立、性质不成立、在当前算法下结果为未知、过长时间仍然没有结果。
+RVFC calls the backend engine of ChiselFV for verification and gives the verification result, which is generally one of the following four cases: the property holds, the property does not hold, the result is unknown under the current algorithm, or the result is not obtained after a long time.
+
+% 从 Chip 中引出 RVFI 信号是最有挑战性的一步，它要求编程人员对 Chip 的设计足够了解，或者是在进行 Chip 设计过程中就进行 RVFI 的连接。
+The most challenging step is to extract the RVFI signal from Chip, which requires programmers to be sufficiently familiar with Chip design, or to connect RVFI during Chip design.
+% 正如在前面中提到的，它要求是在每一条指令进行提交前，而且逻辑上在这条指令前的指令都已经完成提交的时刻，将机器状态信息、该条指令信息、该条指令准备提交的信息进行输出。
+As mentioned earlier, it requires that the machine state information, the instruction information, and the information to be committed for this instruction be output at the time before this instruction is committed and after all the instructions that logically precede this instruction have been committed.
+% 一方面这需要对 Chip 的设计足够了解。
+On the one hand, this requires a sufficient understanding of Chip design.
+% 另一方面，可能有些信息在流水线中因为冗余，在这一时刻已经被丢弃了。
+On the other hand, some information may have been discarded in the pipeline due to redundancy at this time.
+% 例如，在准备提交的时候，该条指令的原操作数可能已经无法获取了。
+For example, the source operands of this instruction may no longer be available when it is ready to commit.
+% 这在实践上需要对电路进行修改，或者是添加一些辅助电路来帮忙存储这些信息。
+This requires modification of the circuit or the addition of some auxiliary circuits to help store this information in practice.
+
+% 然后一步是对验证内容的配置。
+The next step is the configuration of the verification content.
+% RVFC 提供了一些基础的对于部分 RISC-V 指令的验证 Spec 模块们。
+RVFC provides some basic Spec modules for the verification of some RISC-V instructions.
+% 这些 Spec 模块们是根据 RISC-V 官方给出的指令集规范编写，定义了每条指令的正确行为。
+These Spec modules are designed according to the RISC-V instruction set specification, and define the correct behavior of each instruction.
+% 用户可以在实际运行的 Checker 模块中可选的配置这些 Spec 模块们。
+Users can configure these Spec modules in the Checker module that runs in actual processing.
+% 同时，用户也可以根据自己处理器正确性的具体需求，编写自己的 Spec 模块。
+At the same time, users can also write their own Spec modules according to their specific requirements for processor correctness.
+% 并加载到 Checker 模块中进行验证。
+And load them into the Checker module for verification.
+
+% 最后一步是对验证算法的配置。
+The last step is the configuration of the verification algorithm.
+% RVFC 是调用了 ChiselFV 的后端引擎进行验证的。ChiselFV 使用了 Scala 编写，模块化设计，后端引擎可以进行更改替换。
+RVFC calls the backend engine of ChiselFV for verification. ChiselFV is written in Scala, modularly designed, and the backend engine can be changed and replaced.
+% ChiselFV 默认提供的了调用 SymbiYosys 工具的验证引擎，提供了 BMC、K-Induction 和 PDR 算法。
+By default, the ChiselFV provides a verification engine that calls the SymbiYosys, which provides BMC, K-Induction and PDR algorithms.
+% 三种算法
+
 
 \section{Case Study}
 
