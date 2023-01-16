@@ -344,9 +344,55 @@ In addition to RISC-V Formal, RVFC outputs the state of all general-purpose regi
 
 % |RVFI_IO| 作为 Chip 模块的输出，同时作为 Spec 模块们和 Checker 模块的输入。
 The \verb|RVFI_IO| is the output of the Chip module and is also the input of the Spec modules and the Checker module.
-% 
+% 同时在 RVFC 中，对于从 Chip 中引出的 RVFI 有时机上的要求。
+In RVFC, there are also temporal requirements for RVFI from the Chip.
+% 就是要求 RVFI 输出的时刻必须是在该指令提交前，而且在逻辑顺序上在该条指令之前的所有指令指令已经完成提交的之后。
+That is, the RVFI output must be before the instruction is committed, and in the logical order, after all the instructions before the instruction have been committed.
+% 换句话说，RVFI 需要输出逻辑上当前指令执行之前的状态信息，和该指令准备提交的信息。
+In other words, RVFI needs to output the state information before the current instruction is executed, and the information that the instruction is ready to commit.
+% 这也增加了该框架的可适用性，因为大多数流水线设计，即使是乱序执行，但是指令的提交仍然是按照指令原本的顺序的。
+This also increases the applicability of the framework, because most pipeline designs, even if they are out-of-order, still commit instructions in the original order of the instructions.
+% 如何在 Chip 中正确地进行 RVFI 的连接是整个验证工作中最困难的，这将在下一章节的研究案例中有所展示。
+How to correctly connect RVFI in the Chip is the most difficult part of the verification work, which will be shown in the study case in the next section.
 
+\begin{lstlisting}[language=scala, caption={SpecOut Definition in RVFC}, label=specout]
+class SpecOut extends Bundle {
+    val valid     = Output(Bool())
+    val rs1_addr  = Output(UInt(5.W))
+    val rs2_addr  = Output(UInt(5.W))
+    val rs1_rdata = Output(UInt(64.W))
+    val rs2_rdata = Output(UInt(64.W))
+    val rd_addr   = Output(UInt(5.W))
+    val rd_wdata  = Output(UInt(64.W))
+    val pc_wdata  = Output(UInt(64.W))
+    val mem_addr  = Output(UInt(32.W))
+    val mem_wdata = Output(UInt(64.W))
+}
+\end{lstlisting}
 
+% Spec 模块将 RVFI 作为输入，并输出 SpecOut。
+The Spec module takes RVFI as input and outputs SpecOut.
+% SpecOut 的定义如 Listing 3 所示。
+The definition of \verb|SpecOut| is shown in Listing \ref{specout}.
+% 其中的 |valid| 信号输出根据当前的 RVFI 输入，是否符合该验证项目的前提。
+The \verb|valid| signal output is based on the current RVFI input, whether it meets the premise of the verification item.
+% 例如，在对于指令 |add| 的功能性验证 Spec 模块中，只有当输入的指令格式为 |add|，而且流水线没有发生停滞或者中断时，该 |valid| 信号才会输出为 true。
+For example, in the functional verification Spec module for the instruction \verb|add|, the \verb|valid| signal will only output \verb|true| when the instruction format is \verb|add| and the pipeline does not stall or interrupt.
+% |SpecOut| 中其他的信号则是根据 RVFI 输入信息和需要验证的内容，使用组合电路，计算得到的规范下的正确的指令提交内容。
+The other signals in \verb|SpecOut| are the correct instruction commit content under the specification, calculated by a combinational circuit based on the RVFI input information and the content to be verified.
+% 例如对于 |add| 指令的验证，则是会输出根据指令解析得到的原操作数和目标操作数地址、按照地址从寄存器中取出的原操作数、计算得到的目标操作数等。
+For example, for the \verb|add| instruction, the information about the source operands and target operands addresses, the source operands fetched from the registers according to the addresses, the target operands calculated and so on are output.
+
+% 最后在 Checker 模块中，主要是对性质的定义和验证过程的驱动。
+Finally, in the Checker module, it is mainly the definition of the properties and the driving of the verification process.
+% 这里会对于 Chip 输出的 RVFI 和 Spec 模块们输出的 SpecOut 进行一致性的断言。
+Consistency is asserted here between the RVFI output from Chip and the SpecOut output from the Spec modules.
+% 在 Checker 模块中，可以对需要验证的性质内容，即对应的 Spec 模块们进行配置。
+In the Checker module, the properties to be verified, that is, the corresponding Spec modules, can be configured.
+% 用户可以增加或者减少此次需要验证的内容，也可以自定义编写 Spec 模块来进行验证。
+Users can add or subtract content that needs to be validated this time, or write custom Spec modules to do so.
+% 最后，用户可以配置选择调用 ChiselFV 的验证算法，目前提供了 BMC, K-induction, 和 PDR 算法。
+Finally, users can configure the verification algorithm of ChiselFV to be called, and the BMC, K-induction, and PDR algorithms are currently provided.
 
 \subsection{Verification Workflow}
 
