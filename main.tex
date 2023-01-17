@@ -432,8 +432,22 @@ The last step is the configuration of the verification algorithm.
 RVFC calls the backend engine of ChiselFV for verification. ChiselFV is written in Scala, modularly designed, and the backend engine can be changed and replaced.
 % ChiselFV 默认提供的了调用 SymbiYosys 工具的验证引擎，提供了 BMC、K-Induction 和 PDR 算法。
 By default, the ChiselFV provides a verification engine that calls the SymbiYosys, which provides BMC, K-Induction and PDR algorithms.
-% 三种算法
-
+% BMC 算法的大概过程是直接将电路的状态转化为公式，在每一步使用求解器来判断是否出现不满足性质的解。
+The approximate process of the BMC algorithm is to directly translate the state of the circuit into an equation and use a solver at each step to determine whether a solution appears that does not satisfy the property.
+% 因此使用 BMC 算法只能得到在若干步内系统是否安全的结论，无法证明是否恒成立。
+Therefore, the BMC algorithm can only obtain the conclusion that the system is safe within a certain number of steps, and cannot prove whether it is always true.
+% 同时，随着步数的增加，求解公式的规模就会越大，求解时间会越来越长。
+At the same time, as the number of steps increases, the size of the formula to be solved becomes larger and the solving time becomes longer.
+% K-Induction 算法则是在 BMC 算法的过程中增加了一个检查，检查验证性质是否为 k 步归纳不变式。
+The K-Induction algorithm, on the other hand, adds a check to the BMC algorithm process to check whether the property is a k-step inductive invariant.
+% 因此 K-Induction 有可能会证明出性质恒成立，但是它的求解困难度也会随着步数增加而增加。
+Therefore, K-Induction may prove that the property is always true, but the difficulty of solving it is also increasing with the increase of the number of steps.
+% PDR 算法则是尝试通过维护一组公式序列，从而 without unrolling 的方式来进行求解，避免了每次求解公式的规模增加。
+The PDR algorithm try to maintain a set of formula sequences to solve it without unrolling, thus avoiding the increase of the size of the formula to be solved each time.
+% 但是随着步数增加，需要递归 block 的深度也会更大，求解时间也会越来越长。
+However, as the number of steps increases, the depth of the recursive block also increases, and the solving time becomes longer \cite{vizel2015boolean}.
+% 用户可以根据自己的需求选择不同的验证引擎。
+Users can choose different verification engines according to their own needs.
 
 \section{Case Study}
 
