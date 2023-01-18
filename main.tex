@@ -118,8 +118,23 @@ framexleftmargin=15pt}
 \maketitle
 
 \begin{abstract}
-    DUMMY ABSTRACT.
-    Modern digital hardware is becoming ever more complex. And agile development, an efficient idea in software development, has been introduced into hardware. Furthermore, as a new hardware construction language, Chisel helps to raise the level of hardware design abstraction with the support of object-oriented and functional programming. Chisel plays a crucial role in future hardware design and open-source hardware development. However, the formal verification for Chisel is still limited. In this paper, we propose ChiselFV, a formal verification framework that has supported detailed formal hardware property descriptions and integrated mature formal hardware verification flows based on SymbiYosys. It builds on top of Chisel and uses Scala to drive the verification process. Thus the framework can be seen as an extension of Chisel. ChiselFV makes it easy to verify hardware designs formally when implementing them in Chisel.
+    % 随着硬件设计需求越来越复杂和开源硬件生态的发展，Chisel 和 RISC-V 逐渐流行。
+    As hardware design become more and more complex and the open-source hardware ecosystem develops, Chisel and RISC-V are becoming more and more popular.
+    % Chisel 作为 Scala 语言的领域特定语言，借助高级语言的特性，逐渐成为硬件设计开发的选择趋势。
+    Chisel, as a domain-specific language of Scala, is gradually becoming the choice of hardware design development with the help of the features of high-level languages.
+    % 尤其是 RISC-V 开源指令集生态中，许多有代表性的项目均采用 Chisel 实现。
+    Especially in the RISC-V open instruction set ecosystem, many representative projects are implemented with Chisel.
+    % 在硬件开发中，设计的正确性验证非常重要。
+    In hardware development, the correctness verification of the design is very important.
+    % 然而目前对于 RISC-V 设计正确性的主流框架是采用 RISC-V Formal 框架，其是在 SystemVerlog 层次进行验证的。
+    However, the mainstream framework for verifying the correctness of RISC-V designs is RISC-V Formal, which is verified at the SystemVerlog level.
+    % 在本文中，我们提出了 RVFC，一个在 Chisel 层次对 RISC-V 设计进行形式化验证的框架。
+    In this paper, we propose RVFC, a framework for formal verification of RISC-V designs at the Chisel level.
+    % 它基于 ChiselFV 提供的在 Chisel 层次定义形式化性质并验证的能力。
+    It is based on the ability of ChiselFV to define formal properties and verify them at the Chisel level.
+    % 我们同时也重新实现了教科书中的一个 RISC-V 五级流水设计，并通过 RVFC 验证发现了设计中的一个疏忽。
+    We also reimplemented a textbook RISC-V five-stage pipeline design and found a oversight in the design through RVFC verification.
+
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -610,8 +625,25 @@ Later, we modified this part of the code so that the source operands of the \ver
 The pipeline implementation finally passed the formal verification check.
 
 \section{Conclusion and Future Work}
+% 在本文中，我们提出了 RVFC ，一个在 Chisel 层次上对 RISC-V 处理器进行形式化验证的框架。
+In this paper, we introduce RVFC, a framework for formal verification of RISC-V processors at the Chisel level.
+% RVFC 提供了一套在 Chisel 层次上类似于 RISC-V Fomal 框架的验证流程，这是已经经过工业实践证明有效的验证流程。
+RVFC provides a verification workflow similar to the RISC-V Formal framework, which has been proven effective through industrial practice, at the Chisel level.
+% 同时 RVFC 借助模块化的设计，从而支持更加自由的验证内容配置和算法引擎选择。
+At the same time, RVFC supports more flexible verification content configuration and algorithm engine selection by leveraging modular design.
+% 我们同时使用 Chisel 重新实现了课本中的一个简单的五级流水设计。
+We also re-implemented a simple five-stage pipeline design from the textbook using Chisel.
+% 并在验证过程中发现了该流水线设计上关于转发的一个小的疏忽。
+And we found a oversight about forwarding in the pipeline design during the verification process.
+% 以此说明我们的验证框架的有效性。
+This shows the effectiveness of our verification framework.
 
-
+% 在之后的工作中，我们将会找一些更加复杂的 Chisel 层次实现的 RISC-V 处理器，使用 RVFC 框架进行验证。
+In future work, we will find some more complex Chisel-level implementations of RISC-V processors and use the RVFC framework to verify them.
+% 我们目前仍然只能验证一些 demo，尚未具备工业应用的能力，这需要更多复杂的实例验证来不断完善 RVFC 框架。
+We can only verify some demos at present, and we do not have the ability to apply them in industry yet, which requires more complex verification to continuously improve the RVFC framework.
+% 同时我们还在继续开展验证算法的优化工作，目前的验证算法在应对大规模电路验证中往往会难以满足需求，我们希望改进现有的算法来提高验证效率。
+At the same time, we are continuing to work on the optimization of verification algorithms, which are often difficult to meet the needs in dealing with large-scale circuit verification, and we hope to improve the existing algorithms to improve verification efficiency.
 
 \bibliographystyle{IEEEtran}
 \bibliography{./ref.bib}
