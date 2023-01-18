@@ -450,6 +450,108 @@ However, as the number of steps increases, the depth of the recursive block also
 Users can choose different verification engines according to their own needs.
 
 \section{Case Study}
+% 在本章节中，我们使用 Chisel 实现了经典架构教科书中介绍的一个五级流水线，并通过 RVFC 框架进行了形式化验证。
+In this section, we use Chisel to implement a five-level pipeline introduced in a classic architecture textbook \cite{patterson2017computer} and formally verify it with the RVFC framework.
+% 本章节分为三个部分：流水线设计、验证、结果与分析。
+This section is divided into three parts: pipeline design, verification, and results and analysis.
+
+\subsection{Pipeline Design}
+% 在教科书 Computer Organization and Design RISC-V Edition 书中，为了直观说明指令集架构和处理器设计的内容，在第 4.13 节中一步步构建了一个五级流水线设计。
+In the textbook \textit{Computer Organization and Design RISC-V Edition}, in order to intuitively explain the content of the instruction set architecture and processor design, a five-level pipeline design is built step by step in Section 4.13.
+% 书中使用 Verilog 进行了实现，我们将书中给出的最后版本使用了 Chisel 语言进行了重新实现。
+The book uses Verilog to implement it, and we re-implemented it using the Chisel language based on the final version given in the book.
+% 处理器实现和验证的说明和代码也都在 RVFC 的仓库中，作为例子。
+The description and code of processor implementation and verification are also in the repository of RVFC \cite{riscvFvChisel} as an example.
+
+% 这是个简单的五级流水设计。
+This is a simple five-level pipeline design. 
+% 流水包括 指令取指、指令译码、指令执行、内存访问、写回。
+The pipeline includes instruction fetch, instruction decode, instruction execution, memory access, and writeback.
+% 指令执行上为单发射顺序执行。
+Instruction execution is single-issue in-order execution.
+% 它实现了 RISC-V 指令集四个典型的指令：|ld|, |sd|, |add| 和 |beq| 指令。
+It implements four typical instructions of the RISC-V instruction set: \verb|ld|, \verb|sd|, \verb|add| and \verb|beq|.
+
+% 在流水线设计中，采用了转发和停滞两种技术。
+In the pipeline design, both forwarding and stalling techniques are used.
+% 在指令在该流水线中执行的过程中，虽然指令的执行顺序是顺序的，但是相邻的指令会同时在执行过程中的不同阶段上。
+During the execution of instructions in this pipeline, although the instructions are executed in sequential order, adjacent instructions can be executed at the same time but at different stages.
+% 这样的流水设计会使得指令的执行更加高效，但是也引入了新的问题。
+Such a pipeline design can make the execution of instructions more efficient, but it also introduces new problems.
+% 这样的情境可能会发生：一条指令执行时依赖的寄存器数据正好是前面一条尚未提交的指令的写回数据。
+Such a situation may occur: the register data that a certain instruction depends on is the writeback data of the previous instruction that has not yet been committed.
+% 这就会导致 Data Hazards。
+This leads to data hazards \cite{patterson2017computer}.
+% 在该设计中，主要通过转发和停滞来解决这一问题。
+In this design, the problem is mainly solved by forwarding and stalling.
+% 转发是指，当被依赖的数据已经产生了，只是没有写回时，特判这种情况，并将在依赖该数据的地方直接将该数据作为输入。
+Forwarding means that when the data being relied on has been generated and just not written back, this is specifically judged to be the case and the data is directly used as input at the place where the data is relied on.
+% 当被依赖的数据还未产生或者计算出时，那么依赖的指令则需要停滞执行过程，并在流水中插入空指令 |nop|.
+When the data being relied on has not yet been generated or calculated, the instruction that depends on it needs to stall the execution process and insert a \verb|nop| instruction in the pipeline.
+
+% 关于流水想设计的详情，可以在项目仓库和教科书中找到。
+For more details about pipeline design, you can find them in the project repository \cite{riscvFvChisel} and the textbook \cite{patterson2017computer}.
+
+\subsection{Verification}
+% 使用 RVFC 对 Chip 进行验证是通过前面提到的验证流程。
+The verification of Chip is through the verification workflow mentioned above.
+% 主要分为三步，分别是连接 RVFI 接口、配置验证内容和配置算法来驱动验证程序。
+It mainly consists of three steps, namely connecting the RVFI interface, configuring the verification content, and configuring the algorithm to drive the verification process.
+
+% 首先需要在处理器设计中实现 RVFI 接口。
+First, the RVFI interface needs to be implemented in the processor design.
+% 在指令准备提交的时候，关于该条指令的许多信息已经没有被存储了，例如源操作数地址、源操作数等。
+At the time when the instruction is ready to be committed, many information about the instruction has been lost, such as the source operand address and source operand.
+% 可以通过添加额外的寄存器存储这些信息。
+These information can be stored by adding extra registers.
+% 然而，ChiselFV 提供了 |past| 算子，用于获取某个电路节点在若干时刻前的状态。
+However, ChiselFV provides the \verb|past| operator to get the status of a circuit node at some time in the past.
+% 需要注意的是，如果使用该算子最远获取了之前 k 个时钟周期的某个信号的值，那么电路开始的前 k 个时钟周期内，|past| 算子拿不到数据。
+Note that if the value of a signal in the previous k clock cycles is obtained by using the operator, the \verb|past| operator cannot get data in the first k clock cycles of the circuit.
+% 在这个五级流水中，我们使用 |past| 算子最远获取了 3 个时钟之前的信息。
+In this five-stage pipeline, the \verb|past| operator is used to fetch the information at the previous 3 clock cycles.
+% 这里我们利用了 RVFI 接口中的 valid 信号来解决这个问题。
+Here we use the \verb|valid| signal in the RVFI interface to solve this problem.
+% 我们将电路第一次复位后的前三个时刻中 RVFI 中的 valid 信号置为 |false|.
+We set the \verb|valid| signal in RVFI to \verb|false| in the first three clock cycles after the circuit is reset.
+% 在连接 RVFI 信号连接时往往需要使用 |past| 算子来获取节点之前的信息。
+When connecting the RVFI signal, it is often necessary to use the \verb|past| operator to obtain information about the node in the past.
+% 这一步需要小心翼翼的完成，需要对流水线中电路十分的熟悉。
+This step needs to be done carefully and requires a very good understanding of the circuit in the pipeline.
+% 一方面为了指令执行的高效，往往会使得设计实现更加复杂，例如指令的源操作数可能是从寄存器文件中读取的，也可能是由转发机制得到。
+On the one hand, in order to achieve high efficiency of instruction execution, the design implementation is often more complex, such as the source operand of the instruction may be read from the register file, or may be obtained by the forwarding mechanism.
+% 另一方面，不同指令执行所需要的时间可能不同，例如对于直接从寄存器中取出数据并计算的指令可能比较快，然而对于一些需要访存的指令可能会需要更多的时钟周期。
+On the other hand, the time required for different instructions to execute may be different, such as the instruction that directly takes the data from the register and calculates it may be faster, while the instruction that needs to access memory may require more clock cycles.
+% 这些情况都会给 RVFI 接口的正确实现带来挑战。
+These situations can bring challenges to the correct implementation of the RVFI interface.
+
+% 下一步是对于验证内容的配置。
+The next step is to configure the verification content.
+% 在 RVFC 中，预设了一些 Spec 模块们，主要是对 RISC-V 指令集规范中的部分指令的规范进行了定义。
+In RVFC, some Spec modules are preset, mainly to define some of the instructions in the RISC-V instruction set specification.
+% 对于当前这个五级流水的例子，则只需要使用 |ld|, |sd|, |add| 和 |beq| 四条指令对应的 Spec 模块即可。
+For the current example of a five-stage pipeline, only the Spec modules corresponding to the four instructions \verb|ld|, \verb|sd|, \verb|add| and \verb|beq| are needed.
+% 我们将这些模块进行实例化后，将其输出连接到 Checker 模块中，即可完成配置。
+We instantiate these modules and then connect their output to the Checker module to complete the configuration.
+% 用户除了可以使用我们预设的 Spec 模块，也可以自己定义 Spec 模块。
+In addition to using the Spec modules we preset, users can also define their own Spec modules.
+% 这可以是对于扩展指令的行为定义，也可以是开发过程中一些类似于测试内容的性质描述。
+This can be the definition of the behavior of the extended instruction, or the description of some properties similar to the test content in the development process.
+
+% 最后一步是在 Checker 模块中配置验证算法。
+The last step is to configure the verification algorithm in the Checker module.
+% 在这个例子中，我们使用了 BMC 算法来检查前 20 步内所有的验证性质是否成立。
+In this example, we use the BMC algorithm to check whether all the verification properties hold within the first 20 steps.
+% 如 Listing 4 所示的为驱动验证过程的代码。
+The code that drives the verification process is shown in Listing \ref{checkcode}.
+
+\begin{lstlisting}[language=scala, caption={A Code Clip to Call Verification Process}, label=checkcode]
+object testbench extends App {
+    Check.bmc(() => new testbench, 20)
+}
+\end{lstlisting}
+
+\subsection{Results and Analysis}
 
 \section{Conclusion and Future Work}
 
