@@ -545,15 +545,73 @@ In this example, we use the BMC algorithm to check whether all the verification 
 % 如 Listing 4 所示的为驱动验证过程的代码。
 The code that drives the verification process is shown in Listing \ref{checkcode}.
 
-\begin{lstlisting}[language=scala, caption={A Code Clip to Call Verification Process}, label=checkcode]
+\begin{lstlisting}[language=scala, caption={A Code Snippet to Call Verification Process}, label=checkcode]
 object testbench extends App {
     Check.bmc(() => new testbench, 20)
 }
-\end{lstlisting}
+\end{lstlisting}    
 
 \subsection{Results and Analysis}
+% 在一开始运行我们的验证程序时，发现并不能通过验证。
+When we first ran our verification program, we found that it could not pass the verification.
+% 通过对验证引擎给出的反例波形图和设计实现，我们最终找到了问题所在。
+After analyzing the counterexample waveforms and the design implementation, we finally found the problem.
+% 之后我们修改了设计并通过了所有的验证检查。
+After that, we modified the design and passed all the verification checks.
+
+% 当验证引擎找到一条不能满足性质的路径时，会通过 vcd 格式的波形图的方式给出反例。
+When the verification engine finds a path that cannot satisfy the property, it gives a counterexample in the form of a waveform in the vcd (Value Change Dump) format.
+% 在这个文件中，我们可以查询这条路径上任意电路节点在任意时刻的赋值。
+In this file, we can query the value of any circuit node at any time on this path.
+% 通过对 vcd 文件的分析，我们将反例路径整理为表 I 中的指令执行序列。
+By analyzing the vcd file, we organize the counterexample path into the instruction execution sequence in Table \ref{ctx}.
+
+\begin{table}[!h]
+    \caption{Instruction Execution Sequence in the Counterexample}
+    \label{ctx}
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{binary} & \textbf{instruction} & \textbf{PC} & \textbf{related regs}                                                                             \\ \hline
+    0x00000013      & NOP                  & 0xFFFFFFFC  & \begin{tabular}[c]{@{}l@{}}x17: 0\\ x20: 0\end{tabular}                               \\ \hline
+    0x0000F883      & ld x17, 0(x1)        & 0x0         & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\end{tabular}                      \\ \hline
+    0x00508A83      & ld x21, 5(x1)        & 0x4         & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\end{tabular}                      \\ \hline
+    0x00108C93      & addi x25, x1, 1      & 0x8         & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\end{tabular}                      \\ \hline
+    0x03488063      & beq x17, x20, 32     & 0xC         & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\\ wrong branch taken\end{tabular} \\ \hline
+    0x00000013      & NOP                  & -           & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\end{tabular}                      \\ \hline
+    0xFC108AE3      & -                    & 0x2C        & \begin{tabular}[c]{@{}l@{}}x17: 0x80000001\\ x20: 0\end{tabular}                      \\ \hline
+\end{tabular}
+\end{table}
+
+% 表 I 中展示了该实现在这条指令序列上的 |beq| 指令没有正确执行。
+Table \ref{ctx} shows that the \verb|beq| instruction was not executed correctly on this instruction sequence.
+% 在 |beq| 指令执行时，此时 |x17| 和 |x20| 两个寄存器中的数值并不相等，因此该指令并不会使得发生跳转，但是这里却发生了跳转。
+When the \verb|beq| instruction is executed, the values in the \verb|x17| and \verb|x20| registers are not equal, so the instruction does not cause a jump to occur, but a jump occurs here.
+% 这说明在 beq 指令执行时，认为 |x17| 和 |x20| 两个寄存器的值是相等的。
+This indicates that when the \verb|beq| instruction is executed, the values in the \verb|x17| and \verb|x20| registers are considered to be equal.
+% 进一步分析，在执行时，确实是相等的，而且都为 0 因为这个序列中的第一条 |ld| 指令并没有完成提交。
+Further analysis shows that they are indeed equal, and both are 0 because the first \verb|ld| instruction in this sequence has not been committed.
+% 然而在设计实现中，对于 |beq| 指令，在获取源操作数时应该考虑是否需要转发的情况。
+However, in the design implementation, for the \verb|beq| instruction, when obtaining the source operands, the forwarding case should be considered.
+% 通过转发，|beq| 指令应该可以拿到正确的源操作数。
+Through forwarding, the \verb|beq| instruction should be able to obtain the correct source operands.
+
+\begin{lstlisting}[language=scala, caption={A Code Snippet in the Pipeline Design}, label=designcode]
+val takeBranch = (IFIDop === BEQ) && (IFID_funct3 === 0.U) && (Regs(IFIDrs1) === Regs(IFIDrs2))
+\end{lstlisting}
+
+% 在流水线实现中，我们找到了上面的代码片段，这里是判断是否需要跳转的逻辑。
+In the pipeline implementation, we found the above code snippet, which is the logic for determining whether to jump.
+% 可以看到这里是直接将通用寄存器中的值进行比较，没有考虑到寄存器中为脏数据的情况。
+It can be seen that the values in the general-purpose registers are directly compared here, without considering the case where the registers contain dirty data.
+
+% 后来我们修改了这部分代码，使得 |beq| 的源操作数也需要考虑到转发或者停滞的情况。
+Later, we modified this part of the code so that the source operands of the \verb|beq| instruction also need to consider the forwarding or stalling case. 
+% 流水线实现最终通过了形式化验证检查。
+The pipeline implementation finally passed the formal verification check.
 
 \section{Conclusion and Future Work}
+
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{./ref.bib}
