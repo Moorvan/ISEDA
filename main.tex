@@ -119,13 +119,13 @@ framexleftmargin=15pt}
 
 \begin{abstract}
     % 随着硬件设计需求越来越复杂和开源硬件生态的发展，Chisel 和 RISC-V 逐渐流行。
-    As hardware design become more and more complex and the open-source hardware ecosystem develops, Chisel and RISC-V are becoming more and more popular.
+    With the increasing complexity of hardware design requirements and the development of open-source hardware ecosystems, Chisel and RISC-V are becoming increasingly popular.
     % Chisel 作为 Scala 语言的领域特定语言，借助高级语言的特性，逐渐成为硬件设计开发的选择趋势。
-    Chisel, as a domain-specific language of Scala, is gradually becoming the choice of hardware design development with the help of the features of high-level languages.
+    As a domain-specific language of Scala, Chisel is gradually becoming the choice of hardware design development with the help of the features of high-level languages.
     % 尤其是 RISC-V 开源指令集生态中，许多有代表性的项目均采用 Chisel 实现。
-    Especially in the RISC-V open instruction set ecosystem, many representative projects are implemented with Chisel.
+    Especially in the RISC-V open-source instruction set ecosystem, many representative projects are implemented with Chisel.
     % 在硬件开发中，设计的正确性验证非常重要。
-    In hardware development, the correctness verification of the design is very important.
+    In hardware development, the correctness verification of the design is essential.
     % 然而目前对于 RISC-V 设计正确性的主流框架是采用 RISC-V Formal 框架，其是在 SystemVerlog 层次进行验证的。
     However, the mainstream framework for verifying the correctness of RISC-V designs is RISC-V Formal, which is verified at the SystemVerlog level.
     % 在本文中，我们提出了 RVFC，一个在 Chisel 层次对 RISC-V 设计进行形式化验证的框架。
@@ -133,7 +133,7 @@ framexleftmargin=15pt}
     % 它基于 ChiselFV 提供的在 Chisel 层次定义形式化性质并验证的能力。
     It is based on the ability of ChiselFV to define formal properties and verify them at the Chisel level.
     % 我们同时也重新实现了教科书中的一个 RISC-V 五级流水设计，并通过 RVFC 验证发现了设计中的一个疏忽。
-    We also reimplemented a textbook RISC-V five-stage pipeline design and found a oversight in the design through RVFC verification.
+    We also reimplemented a textbook RISC-V five-stage pipeline design and found an oversight in the design through RVFC verification.
 
 \end{abstract}
 
@@ -142,33 +142,33 @@ RISC-V, Formal Verification, Hardware verification, Chisel
 \end{IEEEkeywords}
 
 \section{Introduction}
-The dominant traditional hardware-description languages (HDLs), Verilog and VHDL, were originally developed as hardware simulation languages, and were only later adopted as a basis for hardware synthesis. 
-These languages also lack the powerful abstraction facilities that are common in modern software languages, which leads to low designer productivity by making it difficult to reuse components.
+The dominant traditional hardware-description languages (HDLs), Verilog and VHDL, were initially developed as hardware simulation languages and later adopted as a basis for hardware synthesis. 
+These languages also lack the powerful abstraction facilities common in modern software languages, leading to low designer productivity by making it difficult to reuse components.
 % 因此 Chisel 被推出。
 Therefore, Chisel was proposed.
-It is intended to be a simple platform that provides modern programming language features for accurately specifying low-level hardware blocks, but which can be readily extended to capture many useful high-level hardware design patterns \cite{bachrach2012chisel}.
+It is intended to be a simple platform that provides modern programming language features for accurately specifying low-level hardware blocks, which can be readily extended to capture many useful high-level hardware design patterns \cite{bachrach2012chisel}.
 
 % Chisel
 Chisel (Constructing Hardware in a Scala-Embedded Language) is an open-source hardware construction language developed by UC Berkeley. It is developed as a domain-specific extension to the Scala programming language. And because Chisel is embedded in Scala, hardware developers can tap into Scala’s modern programming language features—such as object-oriented programming, functional programming, parameterized types, abstract data types, operator overloading, and type inference—to improve designer productivity by raising the abstraction level and increasing code reuse \cite{lee2016agile}.
 
 % RISC-V
 % Chisel 是为了敏捷开发 RISC-V 处理器而开发的，其生态因为其语言特性和 RISC-V 的流行而逐渐壮大。
-Chisel was developed for agile development of RISC-V processors, and its ecosystem has grown due to its language features and the popularity of RISC-V.
-RISC-V is an ISA developed at UC Berkeley and designed from the ground up to be clean, microarchitecture-agnostic and highly extensible. Most importantly, RISC-V is free and open, which allows it to be used in both commercial and open-source settings \cite{asanovic2014instruction}.
+Chisel was developed for the agile development of RISC-V processors, and its ecosystem has grown due to its language features and the popularity of RISC-V.
+RISC-V is an ISA developed at UC Berkeley and designed from the ground up to be clean, microarchitecture-agnostic, and highly extensible. Most importantly, RISC-V is free and open, allowing it to be used in commercial and open-source settings \cite{asanovic2014instruction}.
 % UC Berkeley 也推出了两款具有代表性的基于 Chisel 的 RISC-V 芯片生成器。
 UC Berkeley has also released two representative RISC-V chip generators based on Chisel: Rocket Chip \cite{asanovic2016rocket} and BOOM \cite{celio2017boomv2}.
 % 这其中后者是一个乱序核。
 The latter is an out-of-order core.
 % Chisel 由于其高级语言的特性，提供了更强的抽象能力，从而提供了便利的库开发能力。
-Chisel, due to its high-level language features, provides more powerful abstraction capabilities, thus providing convenient library development capabilities. 
+Due to its high-level language features, Chisel provides more powerful abstraction capabilities, thus providing convenient library development capabilities. 
 % 前文中提到的 Rocket chip 实际上是一个 Chip 生成器，它由一系列的参数化的构建芯片库构成。
-The Rocket Chip mentioned above is actually a chip generator, which consists of a collection of parameterized chip-building libraries that we can use to generate different SoC variants \cite{asanovic2016rocket}.
+The Rocket Chip mentioned above is a chip generator consisting of a collection of parameterized chip-building libraries that we can use to generate different SoC variants \cite{asanovic2016rocket}.
 % 基于它的 Raven 系列芯片已经可以进行流片了。
 The Raven family of chips based on it have already been taped out \cite{lee2015raven}.
 
 % 验证的重要性，但是目前的处理器验证主要是在 SystemVerilog 层次。
 % 在硬件开发流程中，由于其错误的代价十分高昂，设计的正确性验证是至关重要的。
-In the hardware development process, due to the high cost of errors, the correctness verification of the design is crucial.
+Due to the high cost of errors in the hardware development process, the correctness verification of the design is crucial.
 % 然而当前的处理器验证工作主要是在 SystemVerilog 层次。
 However, current processor verification efforts are mainly at the SystemVerilog level.
 % 对于 RISC-V 指令集处理器验证的代表性工作为 RISC-V Formal。
@@ -177,31 +177,31 @@ The representative work for RISC-V instruction set processor verification is RIS
 % RISC-V Formal 包含了一个处理器独立的 RISC-V ISA 形式化描述一组验证 testbench。
 RISC-V Formal consists of a processor-independent formal description of the RISC-V ISA and a set of formal testbenches for each processor supported by the framework.
 % 实现了 RISC-V Formal 中定义的 RVFI(RISC-V Formal Interface) 接口的 RISC-V core 都可以使用它进行形式化验证。
-Any RISC-V core that implements the RVFI (RISC-V Formal Interface) defined in RISC-V Formal can use it for formal verification.
+Any RISC-V core that implements the RVFI (RISC-V Formal Interface) defined in RISC-V Formal can use for formal verification.
 % 然而，RISC-V Formal 验证框架是在 SystemVerilog 层次的。
 However, the RISC-V Formal verification framework is at the SystemVerilog level.
 % 基于之前对于 Chisel 的说明和一些比较的工作，相比底层 HDL 语言，例如 SystemVerilog，Chisel 在设计和验证上都更具有生产力。
 Based on the previous description of Chisel and some comparative work, Chisel is more productive in design and verification than low-level HDL languages, such as SystemVerilog \cite{im2021comparative}.
 % 同时， Chisel 生成的 SystemVerilog 代码的可读性和可修改性较差，因此无法直接使用 RISC-V Formal 对 Chisel 实现的 Core 进行形式化验证。
-At the same time, the readability and modifiability of the SystemVerilog code generated by Chisel is poor, it is not possible to directly use RISC-V Formal to verify the core implemented by Chisel.
+At the same time, the readability and modifiability of the SystemVerilog code generated by Chisel are poor, and it is not possible to directly use RISC-V Formal to verify the core implemented by Chisel.
 % 另一方面，RISC-V Formal 的验证后端与框架是紧密耦合的，目前只支持调用 BMC 算法。
-On the other hand, the verification backend of RISC-V Formal is tightly coupled with the framework, and currently only supports calling the BMC algorithm.
+On the other hand, the verification backend of RISC-V Formal is tightly coupled with the framework and currently only supports calling the BMC algorithm.
 
 % 我们的贡献
 % 基于上述，我们提出 RVFC 框架，受启发于 RISC-V Fomal 框架，并在 Chisel 层次进行实践。
-Base on the above, we propose the RVFC (RISC-V Formal in Chisel) framework, inspired by the RISC-V Formal framework, and try to practice it at the Chisel level. 
+Based on the above, we propose the RVFC (RISC-V Formal in Chisel) framework, inspired by the RISC-V Formal framework, and try to practice it at the Chisel level. 
 % ChiselFV
 % RVFC 框架基于我们之前的工作 ChiselFV。
 The RVFC framework is based on our previous work ChiselFV \cite{ChiselFV}.
 % ChiselFV 提供了在 Chisel 层次形式化定义性质，并可以进行一键式调用验证的能力。
-ChiselFV provides the ability to formally define properties at the Chisel level and allows for one-click call verification.
+ChiselFV provides the ability to define properties at the Chisel level formally and allows for one-click call verification.
 % RVFC 相关的代码和 case 都可以在 GitHub 仓库中找到。
 The related code and case of RVFC can be found in the GitHub repository \cite{riscvFvChisel}.
 The main contributions of this work are as follows:
 
 \begin{itemize}
     \item \textbf{RVFC framework.} 
-    We propose the RVFC framework, which is a formal verification framework for RISC-V cores implemented in Chisel. The framework is inspired by the RISC-V Formal framework and is implemented at the Chisel level.
+    We propose the RVFC framework, a formal verification framework for RISC-V cores implemented in Chisel. The framework is inspired by the RISC-V Formal framework and is implemented at the Chisel level.
     % 借助 Chisel 中高级语言的特性，RVFC 框架实现了模块化和更好的扩展性。
     And the RVFC framework enables modularity and better extensibility thanks to the high-level language features in Chisel.
     % 验证流程
@@ -213,13 +213,14 @@ The main contributions of this work are as follows:
 % 文章组织
 This paper is organized as follows. Section II introduces the RISC-V Formal framework. Section III details the design and workflow of the RVFC framework. 
 % 一个在 Chisel 层次实现的五级流水设计和验证过程在 section IV 中以一个 study case 展示。
-A five-stage pipeline design and verification process is presented in section IV as a study case.
+A five-stage pipeline design and verification process are presented in section IV as a study case.
 Section V concludes.
 
 \section{RISC-V Formal}
 
 RISC-V Formal is a formal verification IP for RISC-V processors.
-It is ongoing development and currently supports RV32/64IMC instruction set \cite{riscvf}.
+% 这是一个正在进行的项目，目前支持 RV32/64IMC 指令集。
+It is an ongoing project that supports the RV32/64IMC instruction set \cite{riscvf}.
 RISC-V Formal consists of a processor-independent formal description of the RISC-V ISA and a set of formal testbenches for each processor supported by the framework.
 % 该框架的验证对象在 Verilog/SystemVerilog 层次实现的 RISC-V 处理器，同时要求其实现了 RVFI 接口。
 The framework verifies RISC-V processors implemented at the Verilog/SystemVerilog level and requires that they implement the RVFI interface.
@@ -237,12 +238,10 @@ The verification backend is a direct handoff of the SystemVerilog and SVA code t
 \end{figure}
 % 图 1 是 RISC-V Formal 的框架设计。
 Figure 1 shows the framework design of the RISC-V Formal.
-% 首先，在对处理器正确性对验证过程中，内存和外部的 IO 会被抽象掉，连接核心的实现。
-First of all, in the process of verifying the correctness of the processor, the memory and external IO will be abstracted and connected to the RISC-V core.
-% 两者都作为 rvfi_wrapper 模块的组成。
-Both are used as components of the \verb|rvfi_wrapper| module.
-% 在核心中，需要实现 RVFI 接口，输出在指令执行过程中的一系列状态信息。
-In the core, the RVFI interface needs to be implemented to output a series of state information during the instruction execution process.
+% 首先， RISC-V 实现的核心以及其可能连接的内存和 外部 IO，都作为 |rvfi_wrapper| 模块的组成。
+First, the core of the RISC-V implementation and its possible connection to the memory and external IO are all components of the \verb|rvfi_wrapper| module.
+% 同时在核心中，需要实现 RVFI 接口，输出在指令执行过程中的一系列状态信息。
+And the core must implement the RVFI interface to output state information during the instruction execution.
 
 \begin{lstlisting}[language=verilog, caption={RVFI Definition (partial)}, label=rvfi]
 output [NRET        - 1 : 0] rvfi_valid,
@@ -262,28 +261,29 @@ As shown in Listing \ref{rvfi}, the RVFI interface requires the core to output t
 % 之后，RVFI 接口作为 rvfi_check 模块的输入。
 Then, the RVFI interface is used as the input of the \verb|rvfi_check| module.
 % 在 RISC-V Formal 中，实际上包含了有几百个不同的 rvfi_check 模块。
-There are actually a few hundred different \verb|rvfi_check| modules in RISC-V Formal.
+There are a few hundred different \verb|rvfi_check| modules in RISC-V Formal.
 % 这些多个小的 checker 模块分别对核心中不同方面的正确性进行验证。
-These small checker modules verify the correctness of different aspects of the core separately.
+These small checker modules separately verify the correctness of different core aspects.
 % 例如有对 RISC-V 指令集中各个具体指令的执行正确性进行验证的 checkers，有对指令执行前后 PC 寄存器更新是否正确进行检查的 checker，有对通用寄存器值变化进行检查的，等等。
-For example, there are checkers that verify the correctness of the execution of specific instructions in the RISC-V instruction set, checkers that check whether the PC register is updated correctly before and after the instruction execution, and checkers that check the change of the general register value, etc.
+For example, some checkers verify the correctness of the execution of specific instructions in the RISC-V instruction set, some check whether the PC register is updated correctly before and after the instruction execution, some check the change of the general register value, etc.
 % 全部的检查内容可以查看项目文档或者相关代码。
 All the check contents can be found in the project documentation or the related code \cite{riscv-formal}.
 
 % 在一个具体的 checker 模块中，会包含一个实例化的对应的 spec 模块。在这个 spec 模块中，会依据 RISC-V 官方给出的规范内容来实现对应这一小块的规范内容。
-Within a specific checker module, a corresponding spec module is instantiated. In this spec module, the corresponding small piece of specification is implemented according to the official RISC-V specification \cite{waterman2014risc}.
-% 例如对于 |add| 指令验证的 checker 模块中，会实例化一个对应的 |insn_spec| 模块。在该模块中，会依据官方规范来定义对于加法指令，会对寄存器等状态变量产生怎样的影响。
+Within a specific checker module, a corresponding spec module is instantiated. In this spec module, the related small piece of the specification is implemented according to the official RISC-V specification \cite{waterman2014risc}.
+% 例如对于 |add| 指令验证的 checker 模块中，会实例化一个对应的 |insn_spec| 模块。
+% 在该模块中，会依据官方规范来定义对于加法指令，会对寄存器等状态变量产生怎样的影响。
 For example, in the checker module of the \verb|add| instruction verification, a corresponding \verb|insn_spec| module is instantiated.
-In this module, the impact on the registers and other state variables will be defined according to the official specification.
+According to the official specification, this module defines the impact on the registers and other state variables.
 % |insn_spec| 模块会输出指令执行后各个状态变量的变化情况，然后在 checker 模块中，会使用 SVA 语法来描述 spec 输出结果和实际核心的执行情况是一致的断言。
-The \verb|insn_spec| module outputs the changes in the state variables after the instruction execution, and then in the checker module, the SVA is used to describe the assertions that the spec output is consistent with the actual core execution.
+The \verb|insn_spec| module outputs the changes in the state variables after the instruction execution. Then in the checker module, the SVA is used to describe the assertions that the spec output is consistent with the actual core execution.
 
 % 最后，RISC-V Formal 会将这些包含 SVA 的 SystemVerilog 模块交给 SymbiYosys 工具来进行 BMC 检查。
 Finally, RISC-V Formal hands over these SystemVerilog modules containing SVA to the SymbiYosys tool for BMC ( Bounded Model Checking) \cite{biere2009bounded}.
 % 这里使用自动生成的 sby 文件来驱动 SymbiYosys。
-Here, the automatically generated sby file is used to drive SymbiYosys.
+Here, the automatically generated \verb|.sby| file is used to drive SymbiYosys.
 % SymbiYosys 会给出性质验证的结果。由于只使用了 BMC 检查，因此只能给出在电路的若干步内，性质是否成立的结论。
-SymbiYosys will give the results of the property verification. Since only BMC checking is used, only a conclusion can be given as to whether the property holds within a number of steps of the circuit.
+SymbiYosys gives the results of the property verification. Since only BMC checking is used, only a conclusion can be given as to whether the property holds within several steps of the circuit.
 
 % 基于 RISC-V Formal 的验证方法在业界得到了广泛的应用。
 The RISC-V Formal-based verification approach is widely used in the industry. 
@@ -292,33 +292,33 @@ Standard Semiconductor's Lion is a formally verified, 5-stage pipeline RISC-V co
 % 它实现了 RVFI 接口并使用 RISC-V Formal 来进行形式化验证。
 It implements the RVFI interface and uses RISC-V Formal for formal verification \cite{lion}.
 % lowRISC 的 Ibex is a production-quality open source 32-bit RISC-V CPU core written in SystemVerilog. 它同样使用该框架进行形式化验证。
-LowRISC's Ibex is a production-quality open source 32-bit RISC-V CPU core written in SystemVerilog. And it also uses this framework for formal verification \cite{ibex}.
-WARP-V is a CPU generator written using Transaction-Level Verilog (TL-Verilog) that implements RISC-V ISA and has been formally verified using riscv-formal \cite{hoover2018formally}.
+LowRISC's Ibex is a production-quality open-source 32-bit RISC-V CPU core written in SystemVerilog. And it also uses this framework for formal verification \cite{ibex}.
+WARP-V is a CPU generator written using Transaction-Level Verilog (TL-Verilog) that implements RISC-V ISA and has been formally verified using RISC-V Formal \cite{hoover2018formally}.
 
 % 在 RISC-V Formal 中，由于底层使用 SVA 来定义性质，因此整个框架只适用于 SystemVerilog 实现的 RISC-V 处理器。
-In RISC-V Formal, the entire framework is only applicable to SystemVerilog implementations of RISC-V processors because the underlying SVA is used to define the properties.
+In RISC-V Formal, the entire framework only applies to SystemVerilog implementations of RISC-V processors because the underlying SVA is used to define the properties.
 % 尽管，使用 Chisel 来设计和验证 RISC-V 处理器是更有生产力的，是大势所趋。
 Although, using Chisel for designing and verifying RISC-V processors is more productive and is the general trend.
 % 另一方面，RISC-V Formal 专注于进行 BMC，并且由于耦合强很难扩展到其他验证算法，或者是更换后端引擎。
-On the other hand, RISC-V Formal is focused on BMC and is hard to extend to other verification algorithms or to replace the backend engine due to strong coupling.
+On the other hand, RISC-V Formal is focused on BMC and is hard to extend to different verification algorithms or replace the backend engine due to strong coupling.
 
 \section{RISC-V Formal in Chisel}
 
 % RVFC 是在 Chisel 层次对 RISC-V 处理器进行形式化验证的框架，其验证思路受启发于 RISC-V Formal 框架。
-RVFC is a formal verification framework for RISC-V processors at the Chisel level, and its verification idea is inspired by the RISC-V Formal framework.
+RVFC is a formal verification framework for RISC-V processors at the Chisel level, and the RISC-V Formal framework inspires its verification idea.
 % 与 RISC-V Formal 不同，在 RVFC 中，对于形式化性质的定义和验证依赖于 ChiselFV。
 Unlike RISC-V Formal, in RVFC, the definition and verification of formal properties depend on ChiselFV.
 % ChiselFV 采用与 Chisel 相同的高级语言 Scala 语言实现，借助现代软件编程语言的高级特性，ChiselFV 具有很强的模块化和可扩展性。
 ChiselFV is implemented in the Scala language, which is the same as Chisel. With the help of the advanced features of modern software programming languages, ChiselFV has strong modularity and extensibility.
 % ChiselFV 目前支持直接调用 BMC, K-Induction, PDR 三种主流模型检测算法，同时其后端引擎易于插拔更换。
-ChiselFV currently supports direct invocation of three mainstream model detection algorithms, BMC, K-Induction, and PDR. At the same time, its backend engine is easy to plug and replace.
+ChiselFV currently supports the direct invocation of three mainstream model detection algorithms, BMC, K-Induction, and PDR. At the same time, its backend engine is easy to plug and replace.
 
 % 本章节将通过两部分来详细说明 RVFC 框架，分别是 RVFC 的框架结构和验证流程。
 This section details the RVFC framework in two parts, the framework structure and the verification workflow.
 
 \subsection{Framework Structure}
 % RVFC 的框架结构与 RISC-V Formal 类似，都需要 chip 实现 RVFI 接口，并将指令执行过程中的相关信息进行输出，最终与按照规范会达到的结果进行一致性断言。
-The RVFC framework structure is similar to RISC-V Formal in that it requires the chip to implement the RVFI interface and output information about the instruction execution process, and finally assert consistency with the results that would be achieved according to the specification.
+The RVFC framework structure is similar to RISC-V Formal in that it requires the chip to implement the RVFI interface and output information about the instruction execution process and finally assert consistency with the results that would be achieved according to the specification.
 
 \begin{figure}[!htbp]
     \begin{center}
@@ -329,7 +329,7 @@ The RVFC framework structure is similar to RISC-V Formal in that it requires the
 \end{figure}
 
 % 如图 2 所示，RVFC 验证框架中主要有三个主体，分别为: 使用 Chisel 实现的 RISC-V 处理器 Chip 模块即验证的对象，制定具体验证内容的 Spec 模块们和驱动验证过程的 Checker 模块。
-As shown in Figure \ref{fig: rvfc structure}, there are three main bodies in the RVFC framework, namely: the RISC-V processor Chip module implemented by Chisel, which is the verification object, the Spec modules, which specify the verification content, and the Checker modules that drive the verification process.
+As shown in Figure \ref{fig: rvfc structure}, there are three central bodies in the RVFC framework, namely: the RISC-V processor Chip module implemented by Chisel, which is the verification object, the Spec modules, which specify the verification content, and the Checker modules that drive the verification process.
 
 \begin{lstlisting}[language=scala, caption={RVFI Definition in RVFC}, label=rvfic]
 class RVFI_IO extends Bundle {
@@ -353,7 +353,7 @@ class RVFI_IO extends Bundle {
 % 与 RISC-V Formal 相同的，RVFC 中的 Chip 模块需要实现 RVFI 接口，将指令执行过程中的相关信息输出。
 As in RISC-V Formal, the Chip module in RVFC needs to implement the RVFI interface and output information about the instruction execution process.
 % 借助 Scala 语言更强的抽象能力，RVFI 接口被定义成一个 Bundle 的子类，从而更容易维护和扩展。
-With the Scala language's greater abstraction capabilities, the \verb|RVFI_IO| is defined as a subclass of \verb|Bundle|, making it easier to maintain and extend.
+With the Scala language's more excellent abstraction capabilities, the \verb|RVFI_IO| is defined as a subclass of \verb|Bundle|, making it easier to maintain and extend.
 % 比 RISC-V Formal 更多的是，RVFC 中将所有通用寄存器的状态作为 RVFI 的一部分进行输出，从而更好的检查指令执行的正确性。
 In addition to RISC-V Formal, RVFC outputs the state of all general-purpose registers as part of RVFI, which is better for checking the correctness of instruction execution.
 
@@ -362,13 +362,13 @@ The \verb|RVFI_IO| is the output of the Chip module and is also the input of the
 % 同时在 RVFC 中，对于从 Chip 中引出的 RVFI 有时机上的要求。
 In RVFC, there are also temporal requirements for RVFI from the Chip.
 % 就是要求 RVFI 输出的时刻必须是在该指令提交前，而且在逻辑顺序上在该条指令之前的所有指令指令已经完成提交的之后。
-That is, the RVFI output must be before the instruction is committed, and in the logical order, after all the instructions before the instruction have been committed.
+That is, the RVFI output must be before the instruction is committed and in the logical order after all the instructions before the instruction has been committed.
 % 换句话说，RVFI 需要输出逻辑上当前指令执行之前的状态信息，和该指令准备提交的信息。
-In other words, RVFI needs to output the state information before the current instruction is executed, and the information that the instruction is ready to commit.
+In other words, RVFI needs to output the state information before the current instruction is executed and the information that the instruction is ready to commit.
 % 这也增加了该框架的可适用性，因为大多数流水线设计，即使是乱序执行，但是指令的提交仍然是按照指令原本的顺序的。
-This also increases the applicability of the framework, because most pipeline designs, even if they are out-of-order, still commit instructions in the original order of the instructions.
+This also increases the framework's applicability because most pipeline designs, even if they are out-of-order, still commit instructions in the original order of the instructions.
 % 如何在 Chip 中正确地进行 RVFI 的连接是整个验证工作中最困难的，这将在下一章节的研究案例中有所展示。
-How to correctly connect RVFI in the Chip is the most difficult part of the verification work, which will be shown in the study case in the next section.
+The most challenging part of the verification work is how to correctly connect RVFI in the Chip, which will be shown in the study case in the next section.
 
 \begin{lstlisting}[language=scala, caption={SpecOut Definition in RVFC}, label=specout]
 class SpecOut extends Bundle {
@@ -392,11 +392,11 @@ The definition of \verb|SpecOut| is shown in Listing \ref{specout}.
 % 其中的 |valid| 信号输出根据当前的 RVFI 输入，是否符合该验证项目的前提。
 The \verb|valid| signal output is based on the current RVFI input, whether it meets the premise of the verification item.
 % 例如，在对于指令 |add| 的功能性验证 Spec 模块中，只有当输入的指令格式为 |add|，而且流水线没有发生停滞或者中断时，该 |valid| 信号才会输出为 true。
-For example, in the functional verification Spec module for the instruction \verb|add|, the \verb|valid| signal will only output \verb|true| when the instruction format is \verb|add| and the pipeline does not stall or interrupt.
+For example, in the functional verification Spec module for the instruction \verb|add|, the \verb|valid| signal only outputs \verb|true| when the instruction format is \verb|add| and the pipeline does not stall or interrupt.
 % |SpecOut| 中其他的信号则是根据 RVFI 输入信息和需要验证的内容，使用组合电路，计算得到的规范下的正确的指令提交内容。
 The other signals in \verb|SpecOut| are the correct instruction commit content under the specification, calculated by a combinational circuit based on the RVFI input information and the content to be verified.
 % 例如对于 |add| 指令的验证，则是会输出根据指令解析得到的原操作数和目标操作数地址、按照地址从寄存器中取出的原操作数、计算得到的目标操作数等。
-For example, for the \verb|add| instruction, the information about the source operands and target operands addresses, the source operands fetched from the registers according to the addresses, the target operands calculated and so on are output.
+For example, for the \verb|add| instruction, the information about the source operands and target operands addresses, the source operands fetched from the registers according to the addresses, the target operands calculated, and so on are output.
 
 % 最后在 Checker 模块中，主要是对性质的定义和验证过程的驱动。
 Finally, in the Checker module, it is mainly the definition of the properties and the driving of the verification process.
@@ -405,24 +405,24 @@ Consistency is asserted here between the RVFI output from Chip and the SpecOut o
 % 在 Checker 模块中，可以对需要验证的性质内容，即对应的 Spec 模块们进行配置。
 In the Checker module, the properties to be verified, that is, the corresponding Spec modules, can be configured.
 % 用户可以增加或者减少此次需要验证的内容，也可以自定义编写 Spec 模块来进行验证。
-Users can add or subtract content that needs to be validated this time, or write custom Spec modules to do so.
+Users can add or subtract content that needs to be verified this time or write custom Spec modules.
 % 最后，用户可以配置选择调用 ChiselFV 的验证算法，目前提供了 BMC, K-induction, 和 PDR 算法。
 Finally, users can configure the verification algorithm of ChiselFV to be called, and the BMC, K-induction, and PDR algorithms are currently provided.
 
 \subsection{Verification Workflow}
 % 使用 RVFC 对 Chisel 编写的 RISC-V 设计进行验证主要有以下几个步骤：首先需要在 Chip 这设计 RVFI 连接，接着配置需要验证的内容，最后配置需要调用的验证算法。
-The verification of the RISC-V design in Chisel using RVFC consists of several steps: first, RVFI needs to be connected in Chip; then, the content to be verified needs to be configured; and finally, the verification algorithm to be called needs to be configured.
+Verifying the RISC-V design in Chisel using RVFC consists of several steps: first, RVFI needs to be connected in Chip; then, the content to be verified needs to be configured; and finally, the verification algorithm to be called needs to be configured.
 % RVFC 会调用 ChiselFV 的后端引擎进行验证，并给出验证结果，一般会有四种情况：性质成立、性质不成立、在当前算法下结果为未知、过长时间仍然没有结果。
 RVFC calls the backend engine of ChiselFV for verification and gives the verification result, which is generally one of the following four cases: the property holds, the property does not hold, the result is unknown under the current algorithm, or the result is not obtained after a long time.
 
 % 从 Chip 中引出 RVFI 信号是最有挑战性的一步，它要求编程人员对 Chip 的设计足够了解，或者是在进行 Chip 设计过程中就进行 RVFI 的连接。
-The most challenging step is to extract the RVFI signal from Chip, which requires programmers to be sufficiently familiar with Chip design, or to connect RVFI during Chip design.
+The most challenging step is to extract the RVFI signal from Chip, which requires programmers to be sufficiently familiar with Chip design or to connect RVFI during Chip design.
 % 正如在前面中提到的，它要求是在每一条指令进行提交前，而且逻辑上在这条指令前的指令都已经完成提交的时刻，将机器状态信息、该条指令信息、该条指令准备提交的信息进行输出。
 As mentioned earlier, it requires that the machine state information, the instruction information, and the information to be committed for this instruction be output at the time before this instruction is committed and after all the instructions that logically precede this instruction have been committed.
 % 一方面这需要对 Chip 的设计足够了解。
 On the one hand, this requires a sufficient understanding of Chip design.
 % 另一方面，可能有些信息在流水线中因为冗余，在这一时刻已经被丢弃了。
-On the other hand, some information may have been discarded in the pipeline due to redundancy at this time.
+On the other hand, some information may have been discarded in the pipeline due to redundancy.
 % 例如，在准备提交的时候，该条指令的原操作数可能已经无法获取了。
 For example, the source operands of this instruction may no longer be available when it is ready to commit.
 % 这在实践上需要对电路进行修改，或者是添加一些辅助电路来帮忙存储这些信息。
@@ -433,32 +433,32 @@ The next step is the configuration of the verification content.
 % RVFC 提供了一些基础的对于部分 RISC-V 指令的验证 Spec 模块们。
 RVFC provides some basic Spec modules for the verification of some RISC-V instructions.
 % 这些 Spec 模块们是根据 RISC-V 官方给出的指令集规范编写，定义了每条指令的正确行为。
-These Spec modules are designed according to the RISC-V instruction set specification, and define the correct behavior of each instruction.
+These Spec modules are designed according to the RISC-V instruction set specification and define the correct behavior of each instruction.
 % 用户可以在实际运行的 Checker 模块中可选的配置这些 Spec 模块们。
 Users can configure these Spec modules in the Checker module that runs in actual processing.
 % 同时，用户也可以根据自己处理器正确性的具体需求，编写自己的 Spec 模块。
-At the same time, users can also write their own Spec modules according to their specific requirements for processor correctness.
+At the same time, users can also write their Spec modules according to their specific requirements for processor correctness.
 % 并加载到 Checker 模块中进行验证。
 And load them into the Checker module for verification.
 
 % 最后一步是对验证算法的配置。
 The last step is the configuration of the verification algorithm.
 % RVFC 是调用了 ChiselFV 的后端引擎进行验证的。ChiselFV 使用了 Scala 编写，模块化设计，后端引擎可以进行更改替换。
-RVFC calls the backend engine of ChiselFV for verification. ChiselFV is written in Scala, modularly designed, and the backend engine can be changed and replaced.
+RVFC calls the backend engine of ChiselFV for verification. ChiselFV is written in Scala and modularly designed, and the backend engine can be changed and replaced.
 % ChiselFV 默认提供的了调用 SymbiYosys 工具的验证引擎，提供了 BMC、K-Induction 和 PDR 算法。
-By default, the ChiselFV provides a verification engine that calls the SymbiYosys, which provides BMC, K-Induction and PDR algorithms.
+By default, the ChiselFV provides a verification engine that calls the SymbiYosys, which provides BMC, K-Induction, and PDR algorithms.
 % BMC 算法的大概过程是直接将电路的状态转化为公式，在每一步使用求解器来判断是否出现不满足性质的解。
 The approximate process of the BMC algorithm is to directly translate the state of the circuit into an equation and use a solver at each step to determine whether a solution appears that does not satisfy the property.
 % 因此使用 BMC 算法只能得到在若干步内系统是否安全的结论，无法证明是否恒成立。
-Therefore, the BMC algorithm can only obtain the conclusion that the system is safe within a certain number of steps, and cannot prove whether it is always true.
+Therefore, the BMC algorithm can only conclude that the system is safe within a certain number of steps and cannot prove whether it is always true.
 % 同时，随着步数的增加，求解公式的规模就会越大，求解时间会越来越长。
-At the same time, as the number of steps increases, the size of the formula to be solved becomes larger and the solving time becomes longer.
+At the same time, as the number of steps increases, the formula to be solved becomes more complex, and the solving time becomes longer.
 % K-Induction 算法则是在 BMC 算法的过程中增加了一个检查，检查验证性质是否为 k 步归纳不变式。
-The K-Induction algorithm, on the other hand, adds a check to the BMC algorithm process to check whether the property is a k-step inductive invariant.
+On the other hand, the K-Induction algorithm adds a check to the BMC algorithm process to check whether the property is a k-step inductive invariant.
 % 因此 K-Induction 有可能会证明出性质恒成立，但是它的求解困难度也会随着步数增加而增加。
-Therefore, K-Induction may prove that the property is always true, but the difficulty of solving it is also increasing with the increase of the number of steps.
+Therefore, K-Induction may prove that the property is always true, but the difficulty of solving it also increases with the number of steps.
 % PDR 算法则是尝试通过维护一组公式序列，从而 without unrolling 的方式来进行求解，避免了每次求解公式的规模增加。
-The PDR algorithm try to maintain a set of formula sequences to solve it without unrolling, thus avoiding the increase of the size of the formula to be solved each time.
+The PDR algorithm tries to maintain a set of formula sequences to solve it without unrolling, thus avoiding the increase of the size of the formula to be solved each time.
 % 但是随着步数增加，需要递归 block 的深度也会更大，求解时间也会越来越长。
 However, as the number of steps increases, the depth of the recursive block also increases, and the solving time becomes longer \cite{vizel2015boolean}.
 % 用户可以根据自己的需求选择不同的验证引擎。
@@ -472,7 +472,7 @@ This section is divided into three parts: pipeline design, verification, and res
 
 \subsection{Pipeline Design}
 % 在教科书 Computer Organization and Design RISC-V Edition 书中，为了直观说明指令集架构和处理器设计的内容，在第 4.13 节中一步步构建了一个五级流水线设计。
-In the textbook \textit{Computer Organization and Design RISC-V Edition}, in order to intuitively explain the content of the instruction set architecture and processor design, a five-level pipeline design is built step by step in Section 4.13.
+In the textbook \textit{Computer Organization and Design RISC-V Edition}, to intuitively explain the content of the instruction set architecture and processor design, a five-level pipeline design is built step by step in Section 4.13.
 % 书中使用 Verilog 进行了实现，我们将书中给出的最后版本使用了 Chisel 语言进行了重新实现。
 The book uses Verilog to implement it, and we re-implemented it using the Chisel language based on the final version given in the book.
 % 处理器实现和验证的说明和代码也都在 RVFC 的仓库中，作为例子。
@@ -481,11 +481,11 @@ The description and code of processor implementation and verification are also i
 % 这是个简单的五级流水设计。
 This is a simple five-level pipeline design. 
 % 流水包括 指令取指、指令译码、指令执行、内存访问、写回。
-The pipeline includes instruction fetch, instruction decode, instruction execution, memory access, and writeback.
+The pipeline includes instruction fetch, decode, execution, memory access, and writeback.
 % 指令执行上为单发射顺序执行。
 Instruction execution is single-issue in-order execution.
 % 它实现了 RISC-V 指令集四个典型的指令：|ld|, |sd|, |add| 和 |beq| 指令。
-It implements four typical instructions of the RISC-V instruction set: \verb|ld|, \verb|sd|, \verb|add| and \verb|beq|.
+It implements four typical instructions of the RISC-V instruction set: \verb|ld|, \verb|sd|, \verb|add|, and \verb|beq|.
 
 % 在流水线设计中，采用了转发和停滞两种技术。
 In the pipeline design, both forwarding and stalling techniques are used.
@@ -494,13 +494,13 @@ During the execution of instructions in this pipeline, although the instructions
 % 这样的流水设计会使得指令的执行更加高效，但是也引入了新的问题。
 Such a pipeline design can make the execution of instructions more efficient, but it also introduces new problems.
 % 这样的情境可能会发生：一条指令执行时依赖的寄存器数据正好是前面一条尚未提交的指令的写回数据。
-Such a situation may occur: the register data that a certain instruction depends on is the writeback data of the previous instruction that has not yet been committed.
+Such a situation may occur: the register data that a specific instruction depends on is the writeback data of the previous instruction that has not yet been committed.
 % 这就会导致 Data Hazards。
 This leads to data hazards \cite{patterson2017computer}.
 % 在该设计中，主要通过转发和停滞来解决这一问题。
 In this design, the problem is mainly solved by forwarding and stalling.
 % 转发是指，当被依赖的数据已经产生了，只是没有写回时，特判这种情况，并将在依赖该数据的地方直接将该数据作为输入。
-Forwarding means that when the data being relied on has been generated and just not written back, this is specifically judged to be the case and the data is directly used as input at the place where the data is relied on.
+Forwarding means that when the data being relied on has been generated and just not written back, this is specifically judged to be the case, and the data is directly used as input at the place where the data is relied on.
 % 当被依赖的数据还未产生或者计算出时，那么依赖的指令则需要停滞执行过程，并在流水中插入空指令 |nop|.
 When the data being relied on has not yet been generated or calculated, the instruction that depends on it needs to stall the execution process and insert a \verb|nop| instruction in the pipeline.
 
@@ -511,12 +511,12 @@ For more details about pipeline design, you can find them in the project reposit
 % 使用 RVFC 对 Chip 进行验证是通过前面提到的验证流程。
 The verification of Chip is through the verification workflow mentioned above.
 % 主要分为三步，分别是连接 RVFI 接口、配置验证内容和配置算法来驱动验证程序。
-It mainly consists of three steps, namely connecting the RVFI interface, configuring the verification content, and configuring the algorithm to drive the verification process.
+It mainly consists of three steps: connecting the RVFI interface, configuring the verification content, and configuring the algorithm to drive the verification process.
 
 % 首先需要在处理器设计中实现 RVFI 接口。
 First, the RVFI interface needs to be implemented in the processor design.
 % 在指令准备提交的时候，关于该条指令的许多信息已经没有被存储了，例如源操作数地址、源操作数等。
-At the time when the instruction is ready to be committed, many information about the instruction has been lost, such as the source operand address and source operand.
+When the instruction is ready to be committed, much information about the instruction has been lost, such as the source operand address and source operand.
 % 可以通过添加额外的寄存器存储这些信息。
 These information can be stored by adding extra registers.
 % 然而，ChiselFV 提供了 |past| 算子，用于获取某个电路节点在若干时刻前的状态。
@@ -524,34 +524,34 @@ However, ChiselFV provides the \verb|past| operator to get the status of a circu
 % 需要注意的是，如果使用该算子最远获取了之前 k 个时钟周期的某个信号的值，那么电路开始的前 k 个时钟周期内，|past| 算子拿不到数据。
 Note that if the value of a signal in the previous k clock cycles is obtained by using the operator, the \verb|past| operator cannot get data in the first k clock cycles of the circuit.
 % 在这个五级流水中，我们使用 |past| 算子最远获取了 3 个时钟之前的信息。
-In this five-stage pipeline, the \verb|past| operator is used to fetch the information at the previous 3 clock cycles.
+In this five-stage pipeline, the \verb|past| operator is used to fetch the information at the previous three clock cycles.
 % 这里我们利用了 RVFI 接口中的 valid 信号来解决这个问题。
 Here we use the \verb|valid| signal in the RVFI interface to solve this problem.
 % 我们将电路第一次复位后的前三个时刻中 RVFI 中的 valid 信号置为 |false|.
-We set the \verb|valid| signal in RVFI to \verb|false| in the first three clock cycles after the circuit is reset.
+After resetting the circuit, we set the \verb|valid| signal in RVFI to \verb|false| in the first three clock cycles.
 % 在连接 RVFI 信号连接时往往需要使用 |past| 算子来获取节点之前的信息。
 When connecting the RVFI signal, it is often necessary to use the \verb|past| operator to obtain information about the node in the past.
 % 这一步需要小心翼翼的完成，需要对流水线中电路十分的熟悉。
-This step needs to be done carefully and requires a very good understanding of the circuit in the pipeline.
+This step must be done carefully and requires a perfect understanding of the circuit in the pipeline.
 % 一方面为了指令执行的高效，往往会使得设计实现更加复杂，例如指令的源操作数可能是从寄存器文件中读取的，也可能是由转发机制得到。
-On the one hand, in order to achieve high efficiency of instruction execution, the design implementation is often more complex, such as the source operand of the instruction may be read from the register file, or may be obtained by the forwarding mechanism.
+On the one hand, to achieve high efficiency of instruction execution, the design implementation is often more complex, such as the source operand of the instruction may be read from the register file or obtained by the forwarding mechanism.
 % 另一方面，不同指令执行所需要的时间可能不同，例如对于直接从寄存器中取出数据并计算的指令可能比较快，然而对于一些需要访存的指令可能会需要更多的时钟周期。
-On the other hand, the time required for different instructions to execute may be different, such as the instruction that directly takes the data from the register and calculates it may be faster, while the instruction that needs to access memory may require more clock cycles.
+On the other hand, the time required for different instructions to execute may be different, as the instruction that directly takes the data from the register and calculates it may be faster, while the instruction that needs to access memory may require more clock cycles.
 % 这些情况都会给 RVFI 接口的正确实现带来挑战。
 These situations can bring challenges to the correct implementation of the RVFI interface.
 
 % 下一步是对于验证内容的配置。
 The next step is to configure the verification content.
 % 在 RVFC 中，预设了一些 Spec 模块们，主要是对 RISC-V 指令集规范中的部分指令的规范进行了定义。
-In RVFC, some Spec modules are preset, mainly to define some of the instructions in the RISC-V instruction set specification.
+In RVFC, some Spec modules are preset to define some of the instructions in the RISC-V instruction set specification.
 % 对于当前这个五级流水的例子，则只需要使用 |ld|, |sd|, |add| 和 |beq| 四条指令对应的 Spec 模块即可。
-For the current example of a five-stage pipeline, only the Spec modules corresponding to the four instructions \verb|ld|, \verb|sd|, \verb|add| and \verb|beq| are needed.
+For the current example of a five-stage pipeline, only the Spec modules corresponding to the four instructions \verb|ld|, \verb|sd|, \verb|add|, and \verb|beq| are needed.
 % 我们将这些模块进行实例化后，将其输出连接到 Checker 模块中，即可完成配置。
 We instantiate these modules and then connect their output to the Checker module to complete the configuration.
 % 用户除了可以使用我们预设的 Spec 模块，也可以自己定义 Spec 模块。
-In addition to using the Spec modules we preset, users can also define their own Spec modules.
+In addition to using the Spec modules we preset, users can also define their Spec modules.
 % 这可以是对于扩展指令的行为定义，也可以是开发过程中一些类似于测试内容的性质描述。
-This can be the definition of the behavior of the extended instruction, or the description of some properties similar to the test content in the development process.
+This can be the definition of the behavior of the extended instruction or the description of some properties similar to the test content in the development process.
 
 % 最后一步是在 Checker 模块中配置验证算法。
 The last step is to configure the verification algorithm in the Checker module.
@@ -579,7 +579,7 @@ When the verification engine finds a path that cannot satisfy the property, it g
 % 在这个文件中，我们可以查询这条路径上任意电路节点在任意时刻的赋值。
 In this file, we can query the value of any circuit node at any time on this path.
 % 通过对 vcd 文件的分析，我们将反例路径整理为表 I 中的指令执行序列。
-By analyzing the vcd file, we organize the counterexample path into the instruction execution sequence in Table \ref{ctx}.
+We analyze the vcd file and organize the counterexample path into the instruction execution sequence in Table \ref{ctx}.
 
 \begin{table}[!h]
     \caption{Instruction Execution Sequence in the Counterexample}
@@ -602,11 +602,11 @@ Table \ref{ctx} shows that the \verb|beq| instruction was not executed correctly
 % 在 |beq| 指令执行时，此时 |x17| 和 |x20| 两个寄存器中的数值并不相等，因此该指令并不会使得发生跳转，但是这里却发生了跳转。
 When the \verb|beq| instruction is executed, the values in the \verb|x17| and \verb|x20| registers are not equal, so the instruction does not cause a jump to occur, but a jump occurs here.
 % 这说明在 beq 指令执行时，认为 |x17| 和 |x20| 两个寄存器的值是相等的。
-This indicates that when the \verb|beq| instruction is executed, the values in the \verb|x17| and \verb|x20| registers are considered to be equal.
+This indicates that when the \verb|beq| instruction is executed, the values in the \verb|x17| and \verb|x20| registers are considered equal.
 % 进一步分析，在执行时，确实是相等的，而且都为 0 因为这个序列中的第一条 |ld| 指令并没有完成提交。
 Further analysis shows that they are indeed equal, and both are 0 because the first \verb|ld| instruction in this sequence has not been committed.
 % 然而在设计实现中，对于 |beq| 指令，在获取源操作数时应该考虑是否需要转发的情况。
-However, in the design implementation, for the \verb|beq| instruction, when obtaining the source operands, the forwarding case should be considered.
+However, the forwarding case should be considered in the design implementation for the \verb|beq| instruction when obtaining the source operands.
 % 通过转发，|beq| 指令应该可以拿到正确的源操作数。
 Through forwarding, the \verb|beq| instruction should be able to obtain the correct source operands.
 
@@ -617,7 +617,7 @@ val takeBranch = (IFIDop === BEQ) && (IFID_funct3 === 0.U) && (Regs(IFIDrs1) ===
 % 在流水线实现中，我们找到了上面的代码片段，这里是判断是否需要跳转的逻辑。
 In the pipeline implementation, we found the above code snippet, which is the logic for determining whether to jump.
 % 可以看到这里是直接将通用寄存器中的值进行比较，没有考虑到寄存器中为脏数据的情况。
-It can be seen that the values in the general-purpose registers are directly compared here, without considering the case where the registers contain dirty data.
+It can be seen that the values in the general-purpose registers are directly compared here without considering the case where the registers contain dirty data.
 
 % 后来我们修改了这部分代码，使得 |beq| 的源操作数也需要考虑到转发或者停滞的情况。
 Later, we modified this part of the code so that the source operands of the \verb|beq| instruction also need to consider the forwarding or stalling case. 
@@ -628,22 +628,22 @@ The pipeline implementation finally passed the formal verification check.
 % 在本文中，我们提出了 RVFC ，一个在 Chisel 层次上对 RISC-V 处理器进行形式化验证的框架。
 In this paper, we introduce RVFC, a framework for formal verification of RISC-V processors at the Chisel level.
 % RVFC 提供了一套在 Chisel 层次上类似于 RISC-V Fomal 框架的验证流程，这是已经经过工业实践证明有效的验证流程。
-RVFC provides a verification workflow similar to the RISC-V Formal framework, which has been proven effective through industrial practice, at the Chisel level.
+RVFC provides a verification workflow similar to the RISC-V Formal framework at the Chisel level, which has been proven effective through industrial practice.
 % 同时 RVFC 借助模块化的设计，从而支持更加自由的验证内容配置和算法引擎选择。
 At the same time, RVFC supports more flexible verification content configuration and algorithm engine selection by leveraging modular design.
 % 我们同时使用 Chisel 重新实现了课本中的一个简单的五级流水设计。
 We also re-implemented a simple five-stage pipeline design from the textbook using Chisel.
 % 并在验证过程中发现了该流水线设计上关于转发的一个小的疏忽。
-And we found a oversight about forwarding in the pipeline design during the verification process.
+And we found an oversight about forwarding in the pipeline design during the verification process.
 % 以此说明我们的验证框架的有效性。
 This shows the effectiveness of our verification framework.
 
 % 在之后的工作中，我们将会找一些更加复杂的 Chisel 层次实现的 RISC-V 处理器，使用 RVFC 框架进行验证。
-In future work, we will find some more complex Chisel-level implementations of RISC-V processors and use the RVFC framework to verify them.
+In future work, we will find more complex Chisel-level implementations of RISC-V processors and use the RVFC framework to verify them.
 % 我们目前仍然只能验证一些 demo，尚未具备工业应用的能力，这需要更多复杂的实例验证来不断完善 RVFC 框架。
-We can only verify some demos at present, and we do not have the ability to apply them in industry yet, which requires more complex verification to continuously improve the RVFC framework.
+We can only verify some demos at present, and we cannot apply them in the industry yet, which requires more complex verification to improve the RVFC framework continuously.
 % 同时我们还在继续开展验证算法的优化工作，目前的验证算法在应对大规模电路验证中往往会难以满足需求，我们希望改进现有的算法来提高验证效率。
-At the same time, we are continuing to work on the optimization of verification algorithms, which are often difficult to meet the needs in dealing with large-scale circuit verification, and we hope to improve the existing algorithms to improve verification efficiency.
+At the same time, we are continuing to work on optimizing verification algorithms, which are often challenging to meet the needs of large-scale circuit verification. We hope to improve the existing algorithms to improve verification efficiency.
 
 \bibliographystyle{IEEEtran}
 \bibliography{./ref.bib}
